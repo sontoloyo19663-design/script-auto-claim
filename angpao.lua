@@ -1,3 +1,6 @@
+-- Auto Claim Angpao CDI + GUI + ProximityPrompt
+-- Executor: Ronix | Android Compatible
+
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
@@ -20,7 +23,6 @@ frame.Parent = screenGui
 
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
--- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
 title.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
@@ -32,7 +34,6 @@ title.Font = Enum.Font.GothamBold
 title.Parent = frame
 Instance.new("UICorner", title).CornerRadius = UDim.new(0, 10)
 
--- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 30)
 statusLabel.Position = UDim2.new(0, 10, 0, 45)
@@ -43,7 +44,6 @@ statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = frame
 
--- Progress Label
 local progressLabel = Instance.new("TextLabel")
 progressLabel.Size = UDim2.new(1, -20, 0, 25)
 progressLabel.Position = UDim2.new(0, 10, 0, 78)
@@ -54,7 +54,6 @@ progressLabel.TextScaled = true
 progressLabel.Font = Enum.Font.Gotham
 progressLabel.Parent = frame
 
--- Result Label
 local resultLabel = Instance.new("TextLabel")
 resultLabel.Size = UDim2.new(1, -20, 0, 25)
 resultLabel.Position = UDim2.new(0, 10, 0, 108)
@@ -65,7 +64,6 @@ resultLabel.TextScaled = true
 resultLabel.Font = Enum.Font.Gotham
 resultLabel.Parent = frame
 
--- Start Button
 local startBtn = Instance.new("TextButton")
 startBtn.Size = UDim2.new(0, 110, 0, 35)
 startBtn.Position = UDim2.new(0, 10, 0, 138)
@@ -78,7 +76,6 @@ startBtn.Font = Enum.Font.GothamBold
 startBtn.Parent = frame
 Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
--- Stop Button
 local stopBtn = Instance.new("TextButton")
 stopBtn.Size = UDim2.new(0, 110, 0, 35)
 stopBtn.Position = UDim2.new(0, 138, 0, 138)
@@ -113,38 +110,41 @@ local function setResult(text, color)
     resultLabel.TextColor3 = color or Color3.fromRGB(100, 255, 100)
 end
 
-local function getAngpaoPart(angpao)
-    for _, v in ipairs(angpao:GetDescendants()) do
-        if v:IsA("BasePart") then
-            return v
-        end
-    end
-    return nil
-end
-
-local function claimAngpao(angpao)
+local function claimAngpao(angpaoModel)
     if not isRunning then return end
+
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
-    local part = getAngpaoPart(angpao)
-    if part then
-        hrp.CFrame = CFrame.new(part.Position + teleportOffset)
-        task.wait(0.5)
-        pcall(function()
-            firetouchinterest(hrp, part, 0)
-            task.wait(0.1)
-            firetouchinterest(hrp, part, 1)
-        end)
-        task.wait(claimDelay)
-    end
+
+    -- Cari Part dalam model (namanya sama dengan model)
+    local part = angpaoModel:FindFirstChildWhichIsA("BasePart") 
+        or angpaoModel:FindFirstChild(angpaoModel.Name)
+
+    if not part then return end
+
+    -- Cari ProximityPrompt bernama "Collect"
+    local prompt = part:FindFirstChild("Collect")
+
+    if not prompt then return end
+
+    -- Teleport ke angpao
+    hrp.CFrame = CFrame.new(part.Position + teleportOffset)
+    task.wait(0.6)
+
+    -- Fire ProximityPrompt (Android & PC compatible)
+    pcall(function()
+        fireproximityprompt(prompt)
+    end)
+
+    task.wait(claimDelay)
 end
 
 local function startClaim()
     isRunning = true
     setResult("")
 
-    local angpaoFolder = workspace:FindFirstChild("Event") and
-        workspace.Event:FindFirstChild("AngpaoFolder")
+    local angpaoFolder = workspace:FindFirstChild("Event")
+        and workspace.Event:FindFirstChild("AngpaoFolder")
 
     if not angpaoFolder then
         setStatus("❌ AngpaoFolder tidak ditemukan!", Color3.fromRGB(255, 80, 80))
@@ -153,17 +153,19 @@ local function startClaim()
     end
 
     -- Scan pertama
-    setStatus("🔍 Scanning...", Color3.fromRGB(255, 215, 0))
     local missed = {}
+    setStatus("🔍 Scanning...", Color3.fromRGB(255, 215, 0))
 
     for i = 1, 77 do
         if not isRunning then break end
         local angpaoName = "Angpao" .. i
         local angpao = angpaoFolder:FindFirstChild(angpaoName)
         setProgress(i, 77)
+
         if angpao then
             setStatus("🧧 Claiming " .. angpaoName, Color3.fromRGB(255, 215, 0))
             claimAngpao(angpao)
+            -- Cek apakah masih ada setelah claim
             if angpaoFolder:FindFirstChild(angpaoName) then
                 table.insert(missed, angpaoName)
             end
@@ -174,6 +176,8 @@ local function startClaim()
     for loop = 1, maxRecheckLoop do
         if not isRunning or #missed == 0 then break end
         setStatus("🔄 Re-check #" .. loop .. " | Sisa: " .. #missed, Color3.fromRGB(100, 180, 255))
+        task.wait(1)
+
         local stillMissed = {}
         for idx, angpaoName in ipairs(missed) do
             if not isRunning then break end
@@ -187,10 +191,9 @@ local function startClaim()
             end
         end
         missed = stillMissed
-        task.wait(1)
     end
 
-    -- Hasil
+    -- Hasil akhir
     if #missed == 0 then
         setStatus("✅ Selesai!", Color3.fromRGB(100, 255, 100))
         setResult("Semua angpao berhasil diclaim!", Color3.fromRGB(100, 255, 100))
@@ -203,7 +206,6 @@ local function startClaim()
     isRunning = false
 end
 
--- Button Events
 startBtn.MouseButton1Click:Connect(function()
     if not isRunning then
         task.spawn(startClaim)
@@ -216,4 +218,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setResult("")
 end)
 
-print("[AngpaoGUI] GUI loaded! Klik Start untuk mulai.")
+print("[AngpaoGUI] Loaded! Klik Start untuk mulai.")
