@@ -1,11 +1,13 @@
--- Auto Claim Angpao CDI - Final Version
--- Teleport + Hold E (2 detik) | PC & Android
+-- Auto Claim Angpao CDI - Full Version
+-- Teleport + Hold E + Fly/Noclip + Camera Rotate
 -- Executor: Ronix
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local VIM = game:GetService("VirtualInputManager")
 local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
 
 local isMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled
 
@@ -18,8 +20,8 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 260, 0, 180)
-frame.Position = UDim2.new(0.5, -130, 0.02, 0)
+frame.Size = UDim2.new(0, 270, 0, 230)
+frame.Position = UDim2.new(0.5, -135, 0.02, 0)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -39,8 +41,8 @@ title.Parent = frame
 Instance.new("UICorner", title).CornerRadius = UDim.new(0, 10)
 
 local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -20, 0, 30)
-statusLabel.Position = UDim2.new(0, 10, 0, 43)
+statusLabel.Size = UDim2.new(1, -20, 0, 25)
+statusLabel.Position = UDim2.new(0, 10, 0, 40)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = "Status: Idle"
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -49,8 +51,8 @@ statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = frame
 
 local progressLabel = Instance.new("TextLabel")
-progressLabel.Size = UDim2.new(1, -20, 0, 25)
-progressLabel.Position = UDim2.new(0, 10, 0, 76)
+progressLabel.Size = UDim2.new(1, -20, 0, 22)
+progressLabel.Position = UDim2.new(0, 10, 0, 67)
 progressLabel.BackgroundTransparency = 1
 progressLabel.Text = "Progress: -"
 progressLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -59,8 +61,8 @@ progressLabel.Font = Enum.Font.Gotham
 progressLabel.Parent = frame
 
 local resultLabel = Instance.new("TextLabel")
-resultLabel.Size = UDim2.new(1, -20, 0, 25)
-resultLabel.Position = UDim2.new(0, 10, 0, 104)
+resultLabel.Size = UDim2.new(1, -20, 0, 22)
+resultLabel.Position = UDim2.new(0, 10, 0, 91)
 resultLabel.BackgroundTransparency = 1
 resultLabel.Text = "Platform: " .. (isMobile and "📱 Android" or "💻 PC")
 resultLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
@@ -68,9 +70,36 @@ resultLabel.TextScaled = true
 resultLabel.Font = Enum.Font.Gotham
 resultLabel.Parent = frame
 
+-- Toggle Fly+Noclip
+local flyToggle = Instance.new("TextButton")
+flyToggle.Size = UDim2.new(1, -20, 0, 28)
+flyToggle.Position = UDim2.new(0, 10, 0, 118)
+flyToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+flyToggle.BorderSizePixel = 0
+flyToggle.Text = "🚀 Fly + Noclip: OFF"
+flyToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+flyToggle.TextScaled = true
+flyToggle.Font = Enum.Font.GothamBold
+flyToggle.Parent = frame
+Instance.new("UICorner", flyToggle).CornerRadius = UDim.new(0, 6)
+
+-- Toggle Camera
+local camToggle = Instance.new("TextButton")
+camToggle.Size = UDim2.new(1, -20, 0, 28)
+camToggle.Position = UDim2.new(0, 10, 0, 150)
+camToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+camToggle.BorderSizePixel = 0
+camToggle.Text = "📷 Auto Camera: OFF"
+camToggle.TextColor3 = Color3.fromRGB(200, 200, 200)
+camToggle.TextScaled = true
+camToggle.Font = Enum.Font.GothamBold
+camToggle.Parent = frame
+Instance.new("UICorner", camToggle).CornerRadius = UDim.new(0, 6)
+
+-- Start & Stop
 local startBtn = Instance.new("TextButton")
-startBtn.Size = UDim2.new(0, 110, 0, 35)
-startBtn.Position = UDim2.new(0, 10, 0, 138)
+startBtn.Size = UDim2.new(0, 120, 0, 35)
+startBtn.Position = UDim2.new(0, 10, 0, 185)
 startBtn.BackgroundColor3 = Color3.fromRGB(30, 160, 60)
 startBtn.BorderSizePixel = 0
 startBtn.Text = "▶ Start"
@@ -81,8 +110,8 @@ startBtn.Parent = frame
 Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
 local stopBtn = Instance.new("TextButton")
-stopBtn.Size = UDim2.new(0, 110, 0, 35)
-stopBtn.Position = UDim2.new(0, 138, 0, 138)
+stopBtn.Size = UDim2.new(0, 120, 0, 35)
+stopBtn.Position = UDim2.new(0, 140, 0, 185)
 stopBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
 stopBtn.BorderSizePixel = 0
 stopBtn.Text = "⏹ Stop"
@@ -93,12 +122,15 @@ stopBtn.Parent = frame
 Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 
 -- =====================
---       LOGIC
+--       VARIABLES
 -- =====================
 local isRunning = false
+local isFlyEnabled = false
+local isCamEnabled = false
 local maxRecheckLoop = 3
-local HOLD_DURATION = 2.2  -- Sedikit lebih dari 2 detik untuk toleransi
-local ACTIVATION_DISTANCE = 8  -- Dalam range 10, kita pakai 8 untuk aman
+local HOLD_DURATION = 2.2
+local flyConnection = nil
+local noclipConnection = nil
 
 local function setStatus(text, color)
     statusLabel.Text = "Status: " .. text
@@ -114,7 +146,90 @@ local function setResult(text, color)
     resultLabel.TextColor3 = color or Color3.fromRGB(100, 255, 100)
 end
 
--- PC: Hold E selama HoldDuration
+-- =====================
+--     FLY + NOCLIP
+-- =====================
+local function enableFly()
+    local character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    humanoid.PlatformStand = true
+
+    local bodyVel = Instance.new("BodyVelocity")
+    bodyVel.Velocity = Vector3.zero
+    bodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyVel.Parent = hrp
+
+    local bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bodyGyro.P = 1e4
+    bodyGyro.Parent = hrp
+
+    -- Noclip
+    noclipConnection = RunService.Stepped:Connect(function()
+        if not isFlyEnabled then return end
+        local char = player.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+
+    flyConnection = {bodyVel, bodyGyro}
+end
+
+local function disableFly()
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if humanoid then
+            humanoid.PlatformStand = false
+        end
+        if hrp then
+            for _, v in ipairs(hrp:GetChildren()) do
+                if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
+                    v:Destroy()
+                end
+            end
+        end
+        -- Re-enable collision
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+    flyConnection = nil
+end
+
+-- =====================
+--    AUTO CAMERA
+-- =====================
+local function pointCameraAt(targetPosition)
+    if not isCamEnabled then return end
+    local character = player.Character
+    if not character then return end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    camera.CameraType = Enum.CameraType.Scriptable
+    camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 2, 0), targetPosition)
+    task.wait(0.1)
+    camera.CameraType = Enum.CameraType.Custom
+end
+
+-- =====================
+--     CLAIM LOGIC
+-- =====================
 local function holdE(duration)
     pcall(function()
         VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -123,7 +238,6 @@ local function holdE(duration)
     end)
 end
 
--- Android: Hold tap pada tombol ProximityPrompt di CoreGui
 local function holdTapProximityButton(duration)
     pcall(function()
         local coreGui = game:GetService("CoreGui")
@@ -134,10 +248,8 @@ local function holdTapProximityButton(duration)
                 local screenSize = workspace.CurrentCamera.ViewportSize
                 local centerX = pos.X + size.X / 2
                 local centerY = pos.Y + size.Y / 2
-                -- Hanya tap button di area tengah layar
                 if centerX > screenSize.X * 0.2 and centerX < screenSize.X * 0.8
                     and centerY > screenSize.Y * 0.2 and centerY < screenSize.Y * 0.8 then
-                    -- Hold tap
                     VIM:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
                     task.wait(duration)
                     VIM:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
@@ -162,22 +274,24 @@ local function claimAngpao(angpaoModel)
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
 
-    -- Path: AngpaoFolder > Angpao# (Model) > Angpao# (Part) > Collect
     local part = angpaoModel:FindFirstChildWhichIsA("BasePart")
     if not part then return false end
 
     local prompt = part:FindFirstChild("Collect")
     if not prompt then return false end
 
-    -- Teleport dalam range aktivasi
+    -- Teleport ke angpao
     hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
-    task.wait(0.6) -- Tunggu ProximityPrompt UI muncul
+    task.wait(0.3)
 
-    -- Hold E / tap selama 2.2 detik
+    -- Arahkan kamera ke angpao agar ProximityPrompt terdeteksi
+    pointCameraAt(part.Position)
+    task.wait(0.4)
+
+    -- Hold E / tap
     simulateCollect()
-    task.wait(0.5) -- Jeda setelah claim
+    task.wait(0.5)
 
-    -- Cek berhasil (angpao hilang = sukses)
     return not angpaoModel.Parent or not part.Parent
 end
 
@@ -192,6 +306,11 @@ local function startClaim()
         setStatus("❌ AngpaoFolder tidak ditemukan!", Color3.fromRGB(255, 80, 80))
         isRunning = false
         return
+    end
+
+    -- Aktifkan fly jika enabled
+    if isFlyEnabled then
+        enableFly()
     end
 
     local missed = {}
@@ -232,6 +351,14 @@ local function startClaim()
         missed = stillMissed
     end
 
+    -- Matikan fly setelah selesai
+    if isFlyEnabled then
+        disableFly()
+    end
+
+    -- Reset kamera
+    camera.CameraType = Enum.CameraType.Custom
+
     if #missed == 0 then
         setStatus("✅ Selesai!", Color3.fromRGB(100, 255, 100))
         setResult("Semua angpao berhasil diclaim!", Color3.fromRGB(100, 255, 100))
@@ -244,6 +371,33 @@ local function startClaim()
     isRunning = false
 end
 
+-- =====================
+--     BUTTON EVENTS
+-- =====================
+flyToggle.MouseButton1Click:Connect(function()
+    isFlyEnabled = not isFlyEnabled
+    if isFlyEnabled then
+        flyToggle.Text = "🚀 Fly + Noclip: ON"
+        flyToggle.BackgroundColor3 = Color3.fromRGB(30, 100, 180)
+    else
+        flyToggle.Text = "🚀 Fly + Noclip: OFF"
+        flyToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+        disableFly()
+    end
+end)
+
+camToggle.MouseButton1Click:Connect(function()
+    isCamEnabled = not isCamEnabled
+    if isCamEnabled then
+        camToggle.Text = "📷 Auto Camera: ON"
+        camToggle.BackgroundColor3 = Color3.fromRGB(30, 100, 180)
+    else
+        camToggle.Text = "📷 Auto Camera: OFF"
+        camToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+        camera.CameraType = Enum.CameraType.Custom
+    end
+end)
+
 startBtn.MouseButton1Click:Connect(function()
     if not isRunning then
         task.spawn(startClaim)
@@ -252,6 +406,8 @@ end)
 
 stopBtn.MouseButton1Click:Connect(function()
     isRunning = false
+    disableFly()
+    camera.CameraType = Enum.CameraType.Custom
     setStatus("⏹ Dihentikan", Color3.fromRGB(255, 80, 80))
     setResult("")
 end)
