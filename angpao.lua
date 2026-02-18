@@ -1,5 +1,5 @@
 -- Auto Claim Angpao CDI - Full Version
--- Teleport + Hold E + Fly/Noclip + Camera Rotate
+-- Teleport + Hold E + Fly/Noclip + Camera Rotate + Render Delay Slider
 -- Executor: Ronix
 
 local player = game.Players.LocalPlayer
@@ -20,7 +20,7 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 230)
+frame.Size = UDim2.new(0, 270, 0, 290)
 frame.Position = UDim2.new(0.5, -135, 0.02, 0)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BorderSizePixel = 0
@@ -33,7 +33,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
 title.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
 title.BorderSizePixel = 0
-title.Text = "🧧 Auto Claim Angpao CDI"
+title.Text = "🧧 Auto Claim Angpao By Garskirtz AKA BIANCA"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -96,10 +96,48 @@ camToggle.Font = Enum.Font.GothamBold
 camToggle.Parent = frame
 Instance.new("UICorner", camToggle).CornerRadius = UDim.new(0, 6)
 
+-- Render Delay Label
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(1, -20, 0, 20)
+delayLabel.Position = UDim2.new(0, 10, 0, 184)
+delayLabel.BackgroundTransparency = 1
+delayLabel.Text = "⏱ Jeda Render: 2.0 detik"
+delayLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+delayLabel.TextScaled = true
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.Parent = frame
+
+-- Slider Track
+local sliderTrack = Instance.new("Frame")
+sliderTrack.Size = UDim2.new(1, -20, 0, 10)
+sliderTrack.Position = UDim2.new(0, 10, 0, 208)
+sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+sliderTrack.BorderSizePixel = 0
+sliderTrack.Parent = frame
+Instance.new("UICorner", sliderTrack).CornerRadius = UDim.new(1, 0)
+
+-- Slider Fill
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(0.25, 0, 1, 0) -- default 2 detik (25% dari range 1-5)
+sliderFill.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+sliderFill.BorderSizePixel = 0
+sliderFill.Parent = sliderTrack
+Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
+
+-- Slider Knob
+local sliderKnob = Instance.new("TextButton")
+sliderKnob.Size = UDim2.new(0, 20, 0, 20)
+sliderKnob.Position = UDim2.new(0.25, -10, 0.5, -10)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderKnob.BorderSizePixel = 0
+sliderKnob.Text = ""
+sliderKnob.Parent = sliderTrack
+Instance.new("UICorner", sliderKnob).CornerRadius = UDim.new(1, 0)
+
 -- Start & Stop
 local startBtn = Instance.new("TextButton")
 startBtn.Size = UDim2.new(0, 120, 0, 35)
-startBtn.Position = UDim2.new(0, 10, 0, 185)
+startBtn.Position = UDim2.new(0, 10, 0, 228)
 startBtn.BackgroundColor3 = Color3.fromRGB(30, 160, 60)
 startBtn.BorderSizePixel = 0
 startBtn.Text = "▶ Start"
@@ -111,7 +149,7 @@ Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
 local stopBtn = Instance.new("TextButton")
 stopBtn.Size = UDim2.new(0, 120, 0, 35)
-stopBtn.Position = UDim2.new(0, 140, 0, 185)
+stopBtn.Position = UDim2.new(0, 140, 0, 228)
 stopBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
 stopBtn.BorderSizePixel = 0
 stopBtn.Text = "⏹ Stop"
@@ -120,6 +158,57 @@ stopBtn.TextScaled = true
 stopBtn.Font = Enum.Font.GothamBold
 stopBtn.Parent = frame
 Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
+
+-- =====================
+--      SLIDER LOGIC
+-- =====================
+local renderDelay = 2.0 -- default
+local isDragging = false
+local minDelay = 1.0
+local maxDelay = 5.0
+
+local function updateSlider(inputX)
+    local trackPos = sliderTrack.AbsolutePosition.X
+    local trackSize = sliderTrack.AbsoluteSize.X
+    local relative = math.clamp((inputX - trackPos) / trackSize, 0, 1)
+
+    renderDelay = math.floor((minDelay + relative * (maxDelay - minDelay)) * 10) / 10
+
+    sliderFill.Size = UDim2.new(relative, 0, 1, 0)
+    sliderKnob.Position = UDim2.new(relative, -10, 0.5, -10)
+    delayLabel.Text = "⏱ Jeda Render: " .. string.format("%.1f", renderDelay) .. " detik"
+end
+
+sliderKnob.MouseButton1Down:Connect(function()
+    isDragging = true
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateSlider(input.Position.X)
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+-- Touch support (Android)
+sliderKnob.TouchLongPress:Connect(function()
+    isDragging = true
+end)
+
+UIS.TouchMoved:Connect(function(input)
+    if isDragging then
+        updateSlider(input.Position.X)
+    end
+end)
+
+UIS.TouchEnded:Connect(function()
+    isDragging = false
+end)
 
 -- =====================
 --       VARIABLES
@@ -166,7 +255,6 @@ local function enableFly()
     bodyGyro.P = 1e4
     bodyGyro.Parent = hrp
 
-    -- Noclip
     noclipConnection = RunService.Stepped:Connect(function()
         if not isFlyEnabled then return end
         local char = player.Character
@@ -187,9 +275,7 @@ local function disableFly()
     if character then
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         local hrp = character:FindFirstChild("HumanoidRootPart")
-        if humanoid then
-            humanoid.PlatformStand = false
-        end
+        if humanoid then humanoid.PlatformStand = false end
         if hrp then
             for _, v in ipairs(hrp:GetChildren()) do
                 if v:IsA("BodyVelocity") or v:IsA("BodyGyro") then
@@ -197,7 +283,6 @@ local function disableFly()
                 end
             end
         end
-        -- Re-enable collision
         for _, part in ipairs(character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = true
@@ -220,7 +305,6 @@ local function pointCameraAt(targetPosition)
     if not character then return end
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-
     camera.CameraType = Enum.CameraType.Scriptable
     camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 2, 0), targetPosition)
     task.wait(0.1)
@@ -284,9 +368,13 @@ local function claimAngpao(angpaoModel)
     hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
     task.wait(0.3)
 
-    -- Arahkan kamera ke angpao agar ProximityPrompt terdeteksi
+    -- Arahkan kamera
     pointCameraAt(part.Position)
-    task.wait(0.4)
+    task.wait(0.2)
+
+    -- Tunggu render map sesuai slider
+    setStatus("⏳ Menunggu render... " .. string.format("%.1f", renderDelay) .. "s", Color3.fromRGB(150, 150, 255))
+    task.wait(renderDelay)
 
     -- Hold E / tap
     simulateCollect()
@@ -308,10 +396,7 @@ local function startClaim()
         return
     end
 
-    -- Aktifkan fly jika enabled
-    if isFlyEnabled then
-        enableFly()
-    end
+    if isFlyEnabled then enableFly() end
 
     local missed = {}
 
@@ -351,12 +436,7 @@ local function startClaim()
         missed = stillMissed
     end
 
-    -- Matikan fly setelah selesai
-    if isFlyEnabled then
-        disableFly()
-    end
-
-    -- Reset kamera
+    if isFlyEnabled then disableFly() end
     camera.CameraType = Enum.CameraType.Custom
 
     if #missed == 0 then
