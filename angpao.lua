@@ -1,6 +1,5 @@
 -- Auto Claim Angpao CDI - Final Version
--- Teleport + VirtualInputManager (No fireproximityprompt)
--- PC: SendKeyEvent E | Android: Tap ProximityPrompt Button
+-- Teleport + Hold E (2 detik) | PC & Android
 -- Executor: Ronix
 
 local player = game.Players.LocalPlayer
@@ -8,7 +7,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local VIM = game:GetService("VirtualInputManager")
 local UIS = game:GetService("UserInputService")
 
--- Deteksi platform
 local isMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled
 
 -- =====================
@@ -99,7 +97,8 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 -- =====================
 local isRunning = false
 local maxRecheckLoop = 3
-local teleportOffset = Vector3.new(0, 3, 0)
+local HOLD_DURATION = 2.2  -- Sedikit lebih dari 2 detik untuk toleransi
+local ACTIVATION_DISTANCE = 8  -- Dalam range 10, kita pakai 8 untuk aman
 
 local function setStatus(text, color)
     statusLabel.Text = "Status: " .. text
@@ -115,39 +114,34 @@ local function setResult(text, color)
     resultLabel.TextColor3 = color or Color3.fromRGB(100, 255, 100)
 end
 
--- PC: Simulasi tekan E
-local function pressE()
+-- PC: Hold E selama HoldDuration
+local function holdE(duration)
     pcall(function()
         VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        task.wait(0.2)
+        task.wait(duration)
         VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
     end)
 end
 
--- Android: Cari ProximityPrompt UI yang aktif lalu tap
--- CDI menggunakan ProximityPrompt default Roblox
--- UI-nya ada di PlayerGui > ProximityPrompts (folder default Roblox)
-local function tapProximityPromptUI()
+-- Android: Hold tap pada tombol ProximityPrompt di CoreGui
+local function holdTapProximityButton(duration)
     pcall(function()
-        -- Roblox default ProximityPrompt UI ada di CoreGui
         local coreGui = game:GetService("CoreGui")
         for _, obj in ipairs(coreGui:GetDescendants()) do
-            if obj:IsA("TextButton") or obj:IsA("ImageButton") then
-                -- Cari button yang visible dan posisinya di tengah layar
-                if obj.Visible then
-                    local pos = obj.AbsolutePosition
-                    local size = obj.AbsoluteSize
-                    -- Hanya tap button yang ada di area tengah layar (bukan HUD pinggir)
-                    local screenSize = workspace.CurrentCamera.ViewportSize
-                    local centerX = pos.X + size.X / 2
-                    local centerY = pos.Y + size.Y / 2
-                    if centerX > screenSize.X * 0.2 and centerX < screenSize.X * 0.8
-                        and centerY > screenSize.Y * 0.2 and centerY < screenSize.Y * 0.8 then
-                        VIM:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-                        task.wait(0.15)
-                        VIM:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
-                        return
-                    end
+            if (obj:IsA("TextButton") or obj:IsA("ImageButton")) and obj.Visible then
+                local pos = obj.AbsolutePosition
+                local size = obj.AbsoluteSize
+                local screenSize = workspace.CurrentCamera.ViewportSize
+                local centerX = pos.X + size.X / 2
+                local centerY = pos.Y + size.Y / 2
+                -- Hanya tap button di area tengah layar
+                if centerX > screenSize.X * 0.2 and centerX < screenSize.X * 0.8
+                    and centerY > screenSize.Y * 0.2 and centerY < screenSize.Y * 0.8 then
+                    -- Hold tap
+                    VIM:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+                    task.wait(duration)
+                    VIM:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+                    return
                 end
             end
         end
@@ -156,9 +150,9 @@ end
 
 local function simulateCollect()
     if isMobile then
-        tapProximityPromptUI()
+        holdTapProximityButton(HOLD_DURATION)
     else
-        pressE()
+        holdE(HOLD_DURATION)
     end
 end
 
@@ -168,23 +162,22 @@ local function claimAngpao(angpaoModel)
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
 
-    -- Path: Angpao1 (Model) > Angpao1 (Part) > Collect (ProximityPrompt)
+    -- Path: AngpaoFolder > Angpao# (Model) > Angpao# (Part) > Collect
     local part = angpaoModel:FindFirstChildWhichIsA("BasePart")
     if not part then return false end
 
     local prompt = part:FindFirstChild("Collect")
     if not prompt then return false end
 
-    -- Teleport tepat di sebelah angpao dalam range ProximityPrompt
-    local promptRange = prompt.MaxActivationDistance or 10
+    -- Teleport dalam range aktivasi
     hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
-    task.wait(0.6) -- Tunggu ProximityPrompt UI muncul di layar
+    task.wait(0.6) -- Tunggu ProximityPrompt UI muncul
 
-    -- Simulasi input
+    -- Hold E / tap selama 2.2 detik
     simulateCollect()
-    task.wait(0.8)
+    task.wait(0.5) -- Jeda setelah claim
 
-    -- Cek berhasil atau tidak (angpao hilang = sukses)
+    -- Cek berhasil (angpao hilang = sukses)
     return not angpaoModel.Parent or not part.Parent
 end
 
@@ -203,7 +196,6 @@ local function startClaim()
 
     local missed = {}
 
-    -- Scan pertama
     for i = 1, 77 do
         if not isRunning then break end
         local angpaoName = "Angpao" .. i
@@ -219,7 +211,7 @@ local function startClaim()
         end
     end
 
-    -- Re-check loop
+    -- Re-check
     for loop = 1, maxRecheckLoop do
         if not isRunning or #missed == 0 then break end
         setStatus("🔄 Re-check #" .. loop .. " | Sisa: " .. #missed, Color3.fromRGB(100, 180, 255))
@@ -240,7 +232,6 @@ local function startClaim()
         missed = stillMissed
     end
 
-    -- Hasil akhir
     if #missed == 0 then
         setStatus("✅ Selesai!", Color3.fromRGB(100, 255, 100))
         setResult("Semua angpao berhasil diclaim!", Color3.fromRGB(100, 255, 100))
