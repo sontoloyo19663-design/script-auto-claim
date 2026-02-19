@@ -1,10 +1,9 @@
 -- Auto Quest CDID CNY By Garskirtz Ganteng Tralaleo Tralala
--- Full Version: Teleport + Hold E/Tap + Fly/Noclip + Camera + Render Delay + EventNPC
--- PC & Android Compatible | Executor: Ronix
+-- Full Version: Teleport + InputHoldBegin/End + Fly/Noclip + Camera + Render Delay + EventNPC
+-- PC & Android Compatible | Executor: Ronix | Anti-Kick Safe
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local VIM = game:GetService("VirtualInputManager")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
@@ -225,7 +224,7 @@ local isRunning = false
 local isFlyEnabled = false
 local isCamEnabled = false
 local maxRecheckLoop = 3
-local HOLD_DURATION = 2.2
+local HOLD_DURATION = 2.3
 local noclipConnection = nil
 
 local function setStatus(text, color)
@@ -317,96 +316,41 @@ end
 -- =====================
 --     CLAIM LOGIC
 -- =====================
-local function holdE(duration)
-    pcall(function()
-        VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        task.wait(duration)
-        VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-    end)
-end
-
--- Android: cari ClickRegion di semua tempat
-local function findClickRegion()
-    -- Cari di CoreGui
-    for _, obj in ipairs(game:GetService("CoreGui"):GetDescendants()) do
-        if obj.Name == "ClickRegion" and obj.Visible then
-            return obj
-        end
-    end
-    -- Cari di PlayerGui
-    for _, obj in ipairs(playerGui:GetDescendants()) do
-        if obj.Name == "ClickRegion" and obj.Visible then
-            return obj
-        end
-    end
-    -- Cari semua TextButton visible di tengah layar sebagai fallback
-    local screenSize = camera.ViewportSize
-    for _, obj in ipairs(game:GetService("CoreGui"):GetDescendants()) do
-        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) and obj.Visible then
-            local pos = obj.AbsolutePosition
-            local size = obj.AbsoluteSize
-            local cx = pos.X + size.X / 2
-            local cy = pos.Y + size.Y / 2
-            if cx > screenSize.X * 0.15 and cx < screenSize.X * 0.85
-                and cy > screenSize.Y * 0.15 and cy < screenSize.Y * 0.85 then
-                print("[AngpaoGUI] Fallback button ditemukan: " .. obj.Name)
-                return obj
-            end
-        end
-    end
-    return nil
-end
-
-local function holdTapAndroid(duration)
-    pcall(function()
-        local btn = findClickRegion()
-        if btn then
-            local pos = btn.AbsolutePosition
-            local size = btn.AbsoluteSize
-            local centerX = pos.X + size.X / 2
-            local centerY = pos.Y + size.Y / 2
-            print("[AngpaoGUI] Tapping: " .. btn.Name .. " di " .. centerX .. ", " .. centerY)
-            VIM:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-            task.wait(duration)
-            VIM:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
-        else
-            -- Fallback terakhir: hold E
-            print("[AngpaoGUI] Tidak ada button, fallback ke holdE")
-            holdE(duration)
-        end
-    end)
-end
-
-local function simulateCollect()
-    if isMobile then
-        holdTapAndroid(HOLD_DURATION)
-    else
-        holdE(HOLD_DURATION)
-    end
-end
-
 local function claimAngpao(angpaoModel)
     if not isRunning then return false end
 
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
 
-    local part = angpaoModel:FindFirstChildWhichIsA("BasePart")
+    -- Path: Angpao# (Model) > Angpao# (Part) > Collect
+    local part = angpaoModel:FindFirstChild(angpaoModel.Name)
+    if not part then
+        part = angpaoModel:FindFirstChildWhichIsA("BasePart")
+    end
     if not part then return false end
 
     local prompt = part:FindFirstChild("Collect")
     if not prompt then return false end
 
+    -- Teleport ke angpao
     hrp.CFrame = CFrame.new(part.Position + Vector3.new(0, 3, 0))
     task.wait(0.3)
 
+    -- Arahkan kamera
     pointCameraAt(part.Position)
     task.wait(0.2)
 
+    -- Tunggu render
     setStatus("⏳ Render... " .. string.format("%.1f", renderDelay) .. "s", Color3.fromRGB(150, 150, 255))
     task.wait(renderDelay)
 
-    simulateCollect()
+    -- Claim via InputHoldBegin/End (aman PC & Android!)
+    pcall(function()
+        prompt:InputHoldBegin()
+        task.wait(HOLD_DURATION)
+        prompt:InputHoldEnd()
+    end)
+
     task.wait(0.5)
 
     return not angpaoModel.Parent or not part.Parent
@@ -521,27 +465,22 @@ stopBtn.MouseButton1Click:Connect(function()
     setResult("")
 end)
 
--- Teleport ke EventNPC
 npcBtn.MouseButton1Click:Connect(function()
     local character = player.Character or player.CharacterAdded:Wait()
     local hrp = character:WaitForChild("HumanoidRootPart")
-
     local eventFolder = workspace:FindFirstChild("Event")
     if not eventFolder then
         setStatus("❌ Folder Event tidak ditemukan!", Color3.fromRGB(255, 80, 80))
         return
     end
-
     local eventNPC = eventFolder:FindFirstChild("EventNPC")
     if not eventNPC then
         setStatus("❌ EventNPC tidak ditemukan!", Color3.fromRGB(255, 80, 80))
         return
     end
-
     local npcPart = eventNPC:FindFirstChild("HumanoidRootPart")
         or eventNPC:FindFirstChild("Torso")
         or eventNPC:FindFirstChildWhichIsA("BasePart")
-
     if npcPart then
         hrp.CFrame = CFrame.new(npcPart.Position + Vector3.new(0, 3, 4))
         setStatus("✅ Teleport ke EventNPC!", Color3.fromRGB(100, 255, 100))
