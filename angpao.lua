@@ -1,6 +1,6 @@
--- Auto Claim Angpao CDI - Full Version
--- Teleport + Hold E + Fly/Noclip + Camera Rotate + Render Delay Slider
--- Executor: Ronix
+-- Auto Quest CDID CNY By Garskirtz Ganteng Tralaleo Tralala
+-- Full Version: Teleport + Hold E/Tap + Fly/Noclip + Camera + Render Delay Slider
+-- PC & Android Compatible | Executor: Ronix
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -20,7 +20,7 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 270, 0, 290)
+frame.Size = UDim2.new(0, 270, 0, 300)
 frame.Position = UDim2.new(0.5, -135, 0.02, 0)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 frame.BorderSizePixel = 0
@@ -29,11 +29,12 @@ frame.Draggable = true
 frame.Parent = screenGui
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
+-- Title (2 baris agar muat)
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 35)
+title.Size = UDim2.new(1, 0, 0, 50)
 title.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
 title.BorderSizePixel = 0
-title.Text = "🧧 Auto Claim Angpao By Garskirtz AKA BIANCA"
+title.Text = "🧧 Auto Quest CDID CNY\nBy Garskirtz Ganteng Tralaleo Tralala"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -42,7 +43,7 @@ Instance.new("UICorner", title).CornerRadius = UDim.new(0, 10)
 
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 25)
-statusLabel.Position = UDim2.new(0, 10, 0, 40)
+statusLabel.Position = UDim2.new(0, 10, 0, 55)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = "Status: Idle"
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -52,7 +53,7 @@ statusLabel.Parent = frame
 
 local progressLabel = Instance.new("TextLabel")
 progressLabel.Size = UDim2.new(1, -20, 0, 22)
-progressLabel.Position = UDim2.new(0, 10, 0, 67)
+progressLabel.Position = UDim2.new(0, 10, 0, 82)
 progressLabel.BackgroundTransparency = 1
 progressLabel.Text = "Progress: -"
 progressLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -62,7 +63,7 @@ progressLabel.Parent = frame
 
 local resultLabel = Instance.new("TextLabel")
 resultLabel.Size = UDim2.new(1, -20, 0, 22)
-resultLabel.Position = UDim2.new(0, 10, 0, 91)
+resultLabel.Position = UDim2.new(0, 10, 0, 106)
 resultLabel.BackgroundTransparency = 1
 resultLabel.Text = "Platform: " .. (isMobile and "📱 Android" or "💻 PC")
 resultLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
@@ -73,7 +74,7 @@ resultLabel.Parent = frame
 -- Toggle Fly+Noclip
 local flyToggle = Instance.new("TextButton")
 flyToggle.Size = UDim2.new(1, -20, 0, 28)
-flyToggle.Position = UDim2.new(0, 10, 0, 118)
+flyToggle.Position = UDim2.new(0, 10, 0, 133)
 flyToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
 flyToggle.BorderSizePixel = 0
 flyToggle.Text = "🚀 Fly + Noclip: OFF"
@@ -86,7 +87,7 @@ Instance.new("UICorner", flyToggle).CornerRadius = UDim.new(0, 6)
 -- Toggle Camera
 local camToggle = Instance.new("TextButton")
 camToggle.Size = UDim2.new(1, -20, 0, 28)
-camToggle.Position = UDim2.new(0, 10, 0, 150)
+camToggle.Position = UDim2.new(0, 10, 0, 165)
 camToggle.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
 camToggle.BorderSizePixel = 0
 camToggle.Text = "📷 Auto Camera: OFF"
@@ -99,7 +100,7 @@ Instance.new("UICorner", camToggle).CornerRadius = UDim.new(0, 6)
 -- Render Delay Label
 local delayLabel = Instance.new("TextLabel")
 delayLabel.Size = UDim2.new(1, -20, 0, 20)
-delayLabel.Position = UDim2.new(0, 10, 0, 184)
+delayLabel.Position = UDim2.new(0, 10, 0, 198)
 delayLabel.BackgroundTransparency = 1
 delayLabel.Text = "⏱ Jeda Render: 2.0 detik"
 delayLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -110,21 +111,19 @@ delayLabel.Parent = frame
 -- Slider Track
 local sliderTrack = Instance.new("Frame")
 sliderTrack.Size = UDim2.new(1, -20, 0, 10)
-sliderTrack.Position = UDim2.new(0, 10, 0, 208)
+sliderTrack.Position = UDim2.new(0, 10, 0, 222)
 sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 sliderTrack.BorderSizePixel = 0
 sliderTrack.Parent = frame
 Instance.new("UICorner", sliderTrack).CornerRadius = UDim.new(1, 0)
 
--- Slider Fill
 local sliderFill = Instance.new("Frame")
-sliderFill.Size = UDim2.new(0.25, 0, 1, 0) -- default 2 detik (25% dari range 1-5)
+sliderFill.Size = UDim2.new(0.25, 0, 1, 0)
 sliderFill.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
 sliderFill.BorderSizePixel = 0
 sliderFill.Parent = sliderTrack
 Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
 
--- Slider Knob
 local sliderKnob = Instance.new("TextButton")
 sliderKnob.Size = UDim2.new(0, 20, 0, 20)
 sliderKnob.Position = UDim2.new(0.25, -10, 0.5, -10)
@@ -137,7 +136,7 @@ Instance.new("UICorner", sliderKnob).CornerRadius = UDim.new(1, 0)
 -- Start & Stop
 local startBtn = Instance.new("TextButton")
 startBtn.Size = UDim2.new(0, 120, 0, 35)
-startBtn.Position = UDim2.new(0, 10, 0, 228)
+startBtn.Position = UDim2.new(0, 10, 0, 248)
 startBtn.BackgroundColor3 = Color3.fromRGB(30, 160, 60)
 startBtn.BorderSizePixel = 0
 startBtn.Text = "▶ Start"
@@ -149,7 +148,7 @@ Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
 local stopBtn = Instance.new("TextButton")
 stopBtn.Size = UDim2.new(0, 120, 0, 35)
-stopBtn.Position = UDim2.new(0, 140, 0, 228)
+stopBtn.Position = UDim2.new(0, 140, 0, 248)
 stopBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
 stopBtn.BorderSizePixel = 0
 stopBtn.Text = "⏹ Stop"
@@ -162,7 +161,7 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 -- =====================
 --      SLIDER LOGIC
 -- =====================
-local renderDelay = 2.0 -- default
+local renderDelay = 2.0
 local isDragging = false
 local minDelay = 1.0
 local maxDelay = 5.0
@@ -171,9 +170,7 @@ local function updateSlider(inputX)
     local trackPos = sliderTrack.AbsolutePosition.X
     local trackSize = sliderTrack.AbsoluteSize.X
     local relative = math.clamp((inputX - trackPos) / trackSize, 0, 1)
-
     renderDelay = math.floor((minDelay + relative * (maxDelay - minDelay)) * 10) / 10
-
     sliderFill.Size = UDim2.new(relative, 0, 1, 0)
     sliderKnob.Position = UDim2.new(relative, -10, 0.5, -10)
     delayLabel.Text = "⏱ Jeda Render: " .. string.format("%.1f", renderDelay) .. " detik"
@@ -195,7 +192,7 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
--- Touch support (Android)
+-- Touch support Android
 sliderKnob.TouchLongPress:Connect(function()
     isDragging = true
 end)
@@ -218,7 +215,6 @@ local isFlyEnabled = false
 local isCamEnabled = false
 local maxRecheckLoop = 3
 local HOLD_DURATION = 2.2
-local flyConnection = nil
 local noclipConnection = nil
 
 local function setStatus(text, color)
@@ -266,8 +262,6 @@ local function enableFly()
             end
         end
     end)
-
-    flyConnection = {bodyVel, bodyGyro}
 end
 
 local function disableFly()
@@ -293,7 +287,6 @@ local function disableFly()
         noclipConnection:Disconnect()
         noclipConnection = nil
     end
-    flyConnection = nil
 end
 
 -- =====================
@@ -314,6 +307,8 @@ end
 -- =====================
 --     CLAIM LOGIC
 -- =====================
+
+-- PC: Hold E
 local function holdE(duration)
     pcall(function()
         VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -322,31 +317,48 @@ local function holdE(duration)
     end)
 end
 
-local function holdTapProximityButton(duration)
+-- Android: Hold tap ClickRegion
+local function holdTapAndroid(duration)
     pcall(function()
-        local coreGui = game:GetService("CoreGui")
-        for _, obj in ipairs(coreGui:GetDescendants()) do
-            if (obj:IsA("TextButton") or obj:IsA("ImageButton")) and obj.Visible then
-                local pos = obj.AbsolutePosition
-                local size = obj.AbsoluteSize
-                local screenSize = workspace.CurrentCamera.ViewportSize
-                local centerX = pos.X + size.X / 2
-                local centerY = pos.Y + size.Y / 2
-                if centerX > screenSize.X * 0.2 and centerX < screenSize.X * 0.8
-                    and centerY > screenSize.Y * 0.2 and centerY < screenSize.Y * 0.8 then
-                    VIM:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-                    task.wait(duration)
-                    VIM:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
-                    return
+        local clickRegion = nil
+
+        -- Cari di CoreGui dulu
+        for _, obj in ipairs(game:GetService("CoreGui"):GetDescendants()) do
+            if obj.Name == "ClickRegion" and obj:IsA("TextButton") and obj.Visible then
+                clickRegion = obj
+                break
+            end
+        end
+
+        -- Fallback: cari di PlayerGui
+        if not clickRegion then
+            for _, obj in ipairs(playerGui:GetDescendants()) do
+                if obj.Name == "ClickRegion" and obj:IsA("TextButton") and obj.Visible then
+                    clickRegion = obj
+                    break
                 end
             end
+        end
+
+        if clickRegion then
+            local pos = clickRegion.AbsolutePosition
+            local size = clickRegion.AbsoluteSize
+            local centerX = pos.X + size.X / 2
+            local centerY = pos.Y + size.Y / 2
+            VIM:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+            task.wait(duration)
+            VIM:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+            print("[AngpaoGUI] ClickRegion tap berhasil!")
+        else
+            print("[AngpaoGUI] ClickRegion tidak ditemukan, fallback ke hold E")
+            holdE(duration)
         end
     end)
 end
 
 local function simulateCollect()
     if isMobile then
-        holdTapProximityButton(HOLD_DURATION)
+        holdTapAndroid(HOLD_DURATION)
     else
         holdE(HOLD_DURATION)
     end
@@ -372,11 +384,11 @@ local function claimAngpao(angpaoModel)
     pointCameraAt(part.Position)
     task.wait(0.2)
 
-    -- Tunggu render map sesuai slider
-    setStatus("⏳ Menunggu render... " .. string.format("%.1f", renderDelay) .. "s", Color3.fromRGB(150, 150, 255))
+    -- Tunggu render
+    setStatus("⏳ Render... " .. string.format("%.1f", renderDelay) .. "s", Color3.fromRGB(150, 150, 255))
     task.wait(renderDelay)
 
-    -- Hold E / tap
+    -- Simulasi claim
     simulateCollect()
     task.wait(0.5)
 
